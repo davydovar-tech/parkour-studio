@@ -1,408 +1,486 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Parkour Studio</title>
-  <style>
-    :root { --bg:#0e1621; --panel:#1a2332; --line:#314158; --text:#e8eef7; --muted:#93a4bb; --accent:#00a2ff; }
-    * { box-sizing: border-box; }
-    html, body { margin: 0; height: 100%; }
-    body { font-family: "Segoe UI", Tahoma, sans-serif; background: var(--bg); color: var(--text); overflow: hidden; }
-    .app { display: grid; grid-template-columns: 88px 1fr; height: 100%; }
-    .sidebar { background: #111922; border-right: 1px solid #1d2836; display: flex; flex-direction: column; align-items: center; padding: 10px 0; gap: 6px; }
-    .logo { width: 46px; height: 46px; border-radius: 12px; background: linear-gradient(160deg,#2b8cff,#0b4f93); display: grid; place-items: center; font-weight: 800; margin-bottom: 8px; }
-    .nav-btn { width: 70px; border: 0; background: transparent; color: var(--muted); border-radius: 12px; padding: 8px 4px; cursor: pointer; display: flex; flex-direction: column; align-items: center; gap: 4px; font-size: 11px; }
-    .nav-btn span { font-size: 20px; line-height: 1; }
-    .nav-btn.active, .nav-btn:hover { background: #1c2838; color: white; }
-    .view { display: none; height: 100%; overflow: auto; }
-    .view.active { display: block; }
-    .topbar { display: flex; justify-content: space-between; align-items: center; padding: 18px 24px 8px; }
-    .topbar h1 { margin: 0; font-size: 28px; }
-    .cards, .tile-grid, .market-grid { display: grid; gap: 14px; padding: 8px 24px 28px; }
-    .cards { grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); }
-    .tile-grid { grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); }
-    .market-grid { grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); }
-    .card, .tile, .item, .row { background: var(--panel); border: 1px solid var(--line); border-radius: 14px; }
-    .card, .row { padding: 16px; }
-    .card p, .muted { color: var(--muted); }
-    .tile { min-height: 132px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; cursor: pointer; color: white; font-weight: 700; }
-    .tile .big { font-size: 28px; }
-    .tile:hover { outline: 2px solid var(--accent); }
-    .switch-wrap { padding: 0 24px 28px; }
-    .switch-btn { width: 100%; min-height: 74px; border-radius: 14px; border: 1px solid var(--line); background: #182232; color: white; font-size: 18px; font-weight: 800; cursor: pointer; }
-    .item { overflow: hidden; }
-    .swatch { height: 110px; }
-    .item .meta { padding: 10px 12px 12px; }
-    .free { background: #174e32; color: #8dffc0; border-radius: 999px; padding: 2px 8px; font-size: 12px; font-weight: 800; }
-    .list { padding: 0 24px 24px; display: flex; flex-direction: column; gap: 8px; }
-    button.play, button.primary, button.ghost { border: 0; border-radius: 10px; padding: 10px 14px; cursor: pointer; font-weight: 700; }
-    button.play, button.primary { background: var(--accent); color: white; }
-    button.ghost { background: #2a384c; color: white; }
-    #game-view { position: relative; background: #071018; overflow: hidden; }
-    #game-canvas { width: 100%; height: 100%; display: block; }
-    .hud-chat { position: absolute; left: 12px; top: 12px; width: min(340px, calc(100% - 24px)); z-index: 3; }
-    #chat-log { max-height: 220px; overflow: auto; background: rgba(8,14,22,.62); border-radius: 10px; padding: 8px; }
-    #chat-form { display: flex; gap: 6px; margin-top: 8px; }
-    #chat-input, #site-chat-input { border: 0; border-radius: 8px; padding: 8px 10px; }
-    #chat-input { width: 100%; }
-    .hud-help, .online-badge, .back-btn { position: absolute; z-index: 3; }
-    .hud-help, .online-badge { background: rgba(8,14,22,.62); border-radius: 10px; padding: 8px 10px; font-size: 13px; }
-    .hud-help { right: 12px; bottom: 12px; }
-    .online-badge { right: 12px; top: 12px; }
-    .back-btn { left: 12px; bottom: 12px; }
-    .loader { position: absolute; inset: 0; z-index: 5; display: flex; align-items: center; justify-content: center; background: radial-gradient(circle at 50% 30%, #16324d, #071018 70%); }
-    .loader.hide { display: none; }
-    .bar { height: 10px; background: #203044; border-radius: 999px; overflow: hidden; margin-top: 14px; }
-    .bar > div { height: 100%; width: 0; background: linear-gradient(90deg,#00a2ff,#7ad0ff); transition: width .2s linear; }
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Parkour Studio Launcher</title>
     
-    .studio-auth { position: fixed; inset: 0; z-index: 40; display: grid; place-items: center; background: radial-gradient(circle at 50% 20%, #1c3f66 0%, transparent 42%), #15181d; }
-    .studio-auth.hide { display: none; }
-    .studio-window { width: min(560px, calc(100% - 28px)); background: #2a2d31; border: 1px solid #3a3e44; border-radius: 10px; overflow: hidden; box-shadow: 0 24px 70px rgba(0,0,0,.45); }
-    .studio-titlebar { height: 34px; background: #23262b; color: #c7ccd3; display: flex; align-items: center; justify-content: center; position: relative; font-size: 13px; }
-    .dots { position: absolute; left: 12px; display: flex; gap: 6px; }
-    .dots i { width: 11px; height: 11px; border-radius: 50%; display: block; }
-    .dots i:nth-child(1) { background: #ff5f57; } .dots i:nth-child(2) { background: #febc2e; } .dots i:nth-child(3) { background: #28c840; }
-    .studio-hero { height: 168px; background: linear-gradient(180deg, rgba(6,18,34,.2), rgba(6,18,34,.72)), linear-gradient(160deg,#0d2744,#071423 60%,#10283f); display: flex; flex-direction: column; align-items: center; justify-content: center; }
-    .studio-logo { color: white; font-size: 34px; font-weight: 800; letter-spacing: 1px; }
-    .studio-logo span { font-weight: 500; }
-    .studio-hero p { margin: 8px 0 0; color: #d5dde6; }
-    .studio-form { padding: 28px 54px 22px; display: flex; flex-direction: column; align-items: center; }
-    .studio-form input { width: 100%; max-width: 360px; height: 36px; margin: 7px 0; padding: 0 10px; border-radius: 3px; border: 1px solid #3a3e44; background: #1f2226; color: #fff; }
-    .login-btn { width: 100%; max-width: 360px; height: 38px; margin-top: 12px; border: 0; border-radius: 3px; background: #00a2ff; color: white; font-size: 16px; font-weight: 700; cursor: pointer; }
-    .linkish { border: 0; background: transparent; color: #49b6ff; cursor: pointer; padding: 0; font-size: 14px; }
-    .member-line { color: #d7dbe0; font-size: 14px; margin: 16px 0 8px; }
-    .auth-error { min-height: 18px; margin: 4px 0 0; color: #ff8d8d; font-size: 13px; }
-    .privacy { color: #9aa3ad; font-size: 12px; text-align: center; }
-    @media (max-width: 720px) {
-      .app { grid-template-columns: 64px 1fr; }
-      .nav-btn { width: 56px; font-size: 0; }
-      .studio-form { padding: 22px 16px; }
-      .studio-logo { font-size: 26px; }
-    }
-  </style>
-  <script src="https://cloudflare.com"></script>
+    <!-- Подключаем библиотеки Firebase Compat -->
+    <script src="https://gstatic.com"></script>
+    <script src="https://gstatic.com"></script>
+    <script src="https://gstatic.com"></script>
+    
+    <style>
+        /* Дизайн лаунчера и темная тема */
+        body {
+            background-color: #161d29;
+            font-family: 'Segoe UI', system-ui, sans-serif;
+            color: white;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+        }
+        .launcher-card {
+            background: #202b3c;
+            padding: 40px;
+            border-radius: 6px;
+            width: 380px;
+            text-align: center;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.4);
+            border: 1px solid #2b394e;
+        }
+        h1 {
+            font-size: 32px;
+            font-weight: 800;
+            letter-spacing: 1.5px;
+            margin: 0 0 10px 0;
+            text-transform: uppercase;
+        }
+        .subtitle {
+            color: #8fa0b5;
+            font-size: 14px;
+            margin-bottom: 35px;
+        }
+        .input-group {
+            margin-bottom: 15px;
+        }
+        input {
+            width: 100%;
+            padding: 14px;
+            background: #18202c;
+            border: 1px solid #2d3b50;
+            color: white;
+            border-radius: 4px;
+            box-sizing: border-box;
+            font-size: 14px;
+        }
+        input:focus {
+            outline: none;
+            border-color: #0091ff;
+        }
+        .btn-action {
+            width: 100%;
+            padding: 14px;
+            background: #0091ff;
+            border: none;
+            color: white;
+            font-weight: bold;
+            font-size: 15px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-top: 10px;
+        }
+        .btn-action:hover {
+            background: #007adb;
+        }
+        .toggle-mode {
+            margin-top: 25px;
+            font-size: 13px;
+            color: #8fa0b5;
+        }
+        #switch-mode-btn {
+            color: #0091ff;
+            cursor: pointer;
+            font-weight: 600;
+        }
+        #switch-mode-btn:hover {
+            text-decoration: underline;
+        }
+        .footer-notice {
+            margin-top: 30px;
+            font-size: 11px;
+            color: #55667d;
+        }
+        /* Фиолетовая админка Создателя */
+        .admin-panel {
+            margin-top: 30px;
+            background: #2a1b2d;
+            border: 1px solid #4a2d52;
+            padding: 20px;
+            border-radius: 6px;
+            width: 380px;
+            box-sizing: border-box;
+            display: none; 
+        }
+        .admin-panel h3 { margin-top: 0; color: #ff5555; text-align: center; }
+        .admin-buttons { display: flex; justify-content: space-between; margin-top: 10px; }
+        .admin-btn { padding: 10px; border: none; border-radius: 4px; cursor: pointer; color: white; font-weight: bold; flex: 1; margin: 0 5px; }
+        .btn-ban { background: #d9534f; }
+        .btn-unban { background: #5cb85c; }
+        .btn-delete { background: #f0ad4e; }
+    </style>
 </head>
 <body>
-  <div class="app">
-    <aside class="sidebar">
-      <div class="logo">P</div>
-      <button class="nav-btn active" data-view="home"><span>⌂</span>Home</button>
-      <button class="nav-btn" data-view="charts"><span>▣</span>Charts</button>
-      <button class="nav-btn" data-view="chat"><span>💬</span>Chat</button>
-      <button class="nav-btn" data-view="avatar"><span>☺</span>Avatar</button>
-      <button class="nav-btn" data-view="more"><span>☰</span>More</button>
-    </aside>
-    <main>
-      <section id="home" class="view active">
-        <div class="topbar"><h1>Home</h1><div class="muted" id="online-status-text">Режим: Онлайн</div></div>
-        <div class="cards">
-          <article class="card">
-            <h3>Паркур</h3>
-            <p>Небо и парящие плиты. Сейчас подключено к облачной базе аккаунтов.</p>
-            <button class="play" id="play-btn">Играть</button>
-          </article>
-          <article class="card">
-            <h3>Бесплатный каталог</h3>
-            <p>Все цвета для аватара бесплатные.</p>
-            <button class="ghost" data-view="marketplace">Открыть Marketplace</button>
-          </article>
+
+    <!-- КАРТОЧКА ОКНА ЛАУНЧЕРА -->
+    <div class="launcher-card">
+        <h1 id="form-title">PARKOUR Studio</h1>
+        <div class="subtitle" id="form-subtitle">Start creating your own games!</div>
+        
+        <div class="input-group">
+            <input type="email" id="user-email" placeholder="Username (Email)">
         </div>
-      </section>
-      
-      <section id="charts" class="view">
-        <div class="topbar"><h1>Charts</h1></div>
-        <div class="list" id="charts-list"></div>
-      </section>
-
-      <section id="chat" class="view">
-        <div class="topbar"><h1>Chat</h1></div>
-        <div class="list" id="site-chat-log" style="padding: 24px; min-height: 200px;"></div>
-        <form id="site-chat-form" style="padding: 0 24px;"><input type="text" id="site-chat-input" placeholder="Локальное сообщение"><button class="primary" type="submit">Отправить</button></form>
-      </section>
-
-      <section id="avatar" class="view">
-        <div class="topbar"><h1>Avatar</h1></div>
-        <div class="cards"><article class="card"><h3>Ваш персонаж</h3><p>Цвет тела: <b id="avatar-name">#4aa3ff</b></p></article></div>
-        <div class="tile-grid" id="more-grid"></div>
-      </section>
-
-      <section id="marketplace" class="view">
-        <div class="topbar"><h1>Marketplace</h1></div>
-        <div class="market-grid" id="market"></div>
-      </section>
-
-      <section id="more" class="view">
-        <div class="topbar"><h1>More</h1></div>
-        <div class="switch-wrap"><button class="switch-btn" id="switch-accounts">Switch Accounts</button></div>
-      </section>
-
-      <section id="game-view" class="view">
-        <div class="online-badge" id="online-badge">Режим: один игрок</div>
-        <div class="hud-chat">
-          <div id="chat-log"></div>
-          <form id="chat-form"><input type="text" id="chat-input" placeholder="Нажмите Enter для чата..." autocomplete="off"></form>
+        <div class="input-group">
+            <input type="password" id="user-password" placeholder="Password">
         </div>
-        <div class="hud-help">WASD — ход, Space — прыжок, мышь — обзор</div>
-        <button class="ghost back-btn" id="leave-btn">Выйти в меню</button>
-        <div class="loader" id="loader"><div style="text-align:center;"><h2>Сборка плит...</h2><div class="bar"><div id="bar-progress"></div></div></div></div>
-        <canvas id="game-canvas"></canvas>
-      </section>
-    </main>
-  </div>
-
-  <div class="studio-auth" id="studio-auth">
-    <div class="studio-window">
-      <div class="studio-titlebar"><div class="dots"><i></i><i></i><i></i></div>Parkour Studio Launcher</div>
-      <div class="studio-hero"><div class="studio-logo">PARKOUR <span>Studio</span></div><p>Start creating your own games!</p></div>
-      <form class="studio-form" id="auth-form">
-        <input type="text" id="username" placeholder="Username" required minlength="2" maxlength="16" />
-        <input type="password" id="password" placeholder="Password" required minlength="4" />
-        <input type="password" id="password-confirm" placeholder="Confirm Password" style="display:none;" />
-        <p class="auth-error" id="auth-error"></p>
-        <button type="submit" class="login-btn" id="auth-submit">Log In</button>
-        <p class="member-line"><span id="member-text">Don't have an account?</span> <button type="button" class="linkish" id="toggle-auth">Sign up</button></p>
-        <p class="privacy">Данные надежно сохраняются в базу данных Firebase.</p>
-      </form>
+        
+        <button class="btn-action" id="submit-btn">Log In</button>
+        
+        <div class="toggle-mode" id="mode-text">
+            Don't have an account? <span id="switch-mode-btn">Sign up</span>
+        </div>
+        
+        <div class="footer-notice">Данные надежно сохраняются в базу данных Firebase.</div>
     </div>
-  </div>
-  <script type="module">
-    import { initializeApp } from "https://gstatic.com";
-    import { getFirestore, doc, getDoc, setDoc } from "https://gstatic.com";
 
+    <!-- ТЕХНИЧЕСКАЯ АДМИН-ПАНЕЛЬ -->
+    <div class="admin-panel" id="admin-section">
+        <h3>Панель Создателя</h3>
+        <div class="input-group">
+            <input type="text" id="target-uid" placeholder="Введи UID игрока">
+        </div>
+        <div class="admin-buttons">
+            <button class="admin-btn btn-ban" onclick="adminBanPlayer()">Бан</button>
+            <button class="admin-btn btn-unban" onclick="adminUnbanPlayer()">Разбан</button>
+            <button class="admin-btn btn-delete" onclick="adminDeletePlayer()">Удалить</button>
+        </div>
+    </div>
+<script>
+    // =======================================================
+    // 1. НАСТРОЙКА FIREBASE (Замени тестовые данные на свои)
+    // =======================================================
     const firebaseConfig = {
-        apiKey: "AIzaSyDzxC_wCFyX8z1t0Dk89clgpU1bS2IGYus",
+        apiKey: "ВСТАВЬ_СЮДА_СВОЙ_API_KEY",
         authDomain: "://firebaseapp.com",
+        databaseURL: "https://firebaseio.com",
         projectId: "parkour-studio",
         storageBucket: "://appspot.com",
-        messagingSenderId: "783686073046",
-        appId: "1:783686073046:web:708bba438773a04895e777",
-        measurementId: "G-2Q8GCR02D4"
+        messagingSenderId: "1234567890",
+        appId: "1:123456:web:123456"
     };
 
-    const app = initializeApp(firebaseConfig);
-    const db = getFirestore(app);
+    // Инициализация сервисов Firebase
+    if (!firebase.apps.length) {
+        firebase.initializeApp(firebaseConfig);
+    }
+    const auth = firebase.auth();
+    const db = firebase.database();
 
-    window.state = { name: "", color: "#4aa3ff" };
-    let signup = false;
+    // Состояние формы (false = Логин, true = Регистрация)
+    let isSignUp = false;
 
-    const toggleBtn = document.getElementById("toggle-auth");
-    const confirmInput = document.getElementById("password-confirm");
-    const submitBtn = document.getElementById("auth-submit");
-    const memberText = document.getElementById("member-text");
-    const errText = document.getElementById("auth-error");
+    // Получаем элементы интерфейса
+    const submitBtn = document.getElementById('submit-btn');
+    const modeText = document.getElementById('mode-text');
+    const emailInput = document.getElementById('user-email');
+    const passwordInput = document.getElementById('user-password');
+    const adminSection = document.getElementById('admin-section');
 
-    toggleBtn.onclick = () => {
-      signup = !signup;
-      confirmInput.style.display = signup ? "block" : "none";
-      submitBtn.textContent = signup ? "Sign Up" : "Log In";
-      memberText.textContent = signup ? "Already have an account?" : "Don't have an account?";
-      toggleBtn.textContent = signup ? "Log in" : "Sign up";
-      errText.textContent = "";
-    };
+    // =======================================================
+    // 2. БЕЗОПАСНОЕ ПЕРЕКЛЮЧЕНИЕ РЕЖИМА (SIGN UP / LOG IN)
+    // =======================================================
+    document.addEventListener('click', function(event) {
+        if (event.target && event.target.id === 'switch-mode-btn') {
+            isSignUp = !isSignUp;
+            
+            if (isSignUp) {
+                submitBtn.innerText = "Sign Up";
+                modeText.innerHTML = 'Already have an account? <span id="switch-mode-btn">Log in</span>';
+            } else {
+                submitBtn.innerText = "Log In";
+                modeText.innerHTML = 'Don\'t have an account? <span id="switch-mode-btn">Sign up</span>';
+            }
+        }
+    });
 
-    document.getElementById("auth-form").onsubmit = async (e) => {
-      e.preventDefault();
-      errText.textContent = "";
-      const userVal = document.getElementById("username").value.trim();
-      const passVal = document.getElementById("password").value;
-      const confVal = confirmInput.value;
+    // =======================================================
+    // 3. ОТПРАВКА ФОРМЫ (РЕГИСТРАЦИЯ И ВХОД С ПРОВЕРКОЙ БАНА)
+    // =======================================================
+    submitBtn.addEventListener('click', () => {
+        const email = emailInput.value.trim();
+        const password = passwordInput.value;
 
-      if (userVal.length < 2) { errText.textContent = "Имя слишком короткое!"; return; }
-
-      const userRef = doc(db, "users", userVal.toLowerCase());
-
-      try {
-        const snap = await getDoc(userRef);
-
-        if (signup) {
-          if (snap.exists()) { errText.textContent = "Имя уже занято!"; return; }
-          if (passVal !== confVal) { errText.textContent = "Пароли не совпадают!"; return; }
-
-          await setDoc(userRef, {
-            username: userVal,
-            password: passVal,
-            avatarColor: "#4aa3ff",
-            status: "active"
-          });
-          loginSuccess(userVal, "#4aa3ff");
-        } else {
-          if (!snap.exists()) { errText.textContent = "Игрок не найден!"; return; }
-          const data = snap.data();
-
-          if (data.status === "banned") {
-            errText.textContent = "🔴 Ваш аккаунт ЗАБАНЕН создателем игры!";
+        if (!email || !password) {
+            alert("Пожалуйста, заполните почту и пароль!");
             return;
-          }
-
-          if (data.password !== passVal) { errText.textContent = "Неверный пароль!"; return; }
-          loginSuccess(data.username, data.avatarColor || "#4aa3ff");
         }
-      } catch (err) {
-        errText.textContent = "Ошибка подключения к базе данных.";
-      }
-    };
 
-    function loginSuccess(name, color) {
-      window.state.name = name;
-      window.state.color = color;
-      document.getElementById("studio-auth").classList.add("hide");
-      document.getElementById("online-badge").textContent = `Игрок: ${name}`;
-      document.getElementById("online-status-text").textContent = `Режим: Онлайн (${name}) 🟢`;
-      document.getElementById("avatar-name").textContent = color;
-      if (window.setCubeColor) window.setCubeColor(color);
-    }
-
-    document.getElementById("switch-accounts").onclick = () => {
-      document.getElementById("studio-auth").classList.remove("hide");
-    };
-  </script>
-
-  <script>
-    const TILES = [["marketplace","👕","Marketplace"],["store","🛍️","Official Store"],["settings","⚙️","Settings"],["about","ℹ️","About"],["help","⛑️","Help & Safety"],["quick","⚡","Quick Sign-In"]];
-    const ITEMS = [["Sky Blue","#87ceeb"],["Default Blue","#4aa3ff"],["Mint","#3dcc9a"],["Sun","#ffeb3f"],["Violet","#8b57ff"],["Cloud","#e6eef7"]];
-    
-    function showView(id) {
-      document.querySelectorAll(".view").forEach(v => v.classList.remove("active"));
-      document.querySelectorAll(".nav-btn").forEach(b => b.classList.remove("active"));
-      const view = document.getElementById(id);
-      if (view) view.classList.add("active");
-      const btn = document.querySelector(`[data-view="${id}"]`);
-      if (btn) btn.classList.add("active");
-      if (id === "game-view") Parkour.enter(); else Parkour.leave();
-    }
-
-    function say(text) {
-      const pName = (window.state && window.state.name) ? window.state.name : "Игрок";
-      const row = document.createElement("div");
-      row.className = "row";
-      row.style.marginBottom = "6px";
-      row.textContent = pName + ": " + text;
-      document.getElementById("site-chat-log").prepend(row);
-      const line = document.createElement("div");
-      line.textContent = pName + ": " + text;
-      document.getElementById("chat-log").appendChild(line);
-    }
-
-    TILES.forEach(([key, icon, label]) => {
-      const btn = document.createElement("button");
-      btn.className = "tile";
-      btn.innerHTML = `<span class="big">${icon}</span>${label}`;
-      btn.onclick = () => { if (key === "marketplace") showView("marketplace"); };
-      document.getElementById("more-grid").appendChild(btn);
-    });
-
-    ITEMS.forEach(([name, color]) => {
-      const card = document.createElement("article");
-      card.className = "item";
-      card.innerHTML = `<div class="swatch" style="background:${color}"></div><div class="meta"><h3>${name}</h3><span class="free">Free</span><p><button class="primary" data-color="${color}">Надеть</button></p></div>`;
-      document.getElementById("market").appendChild(card);
-    });
-
-    document.getElementById("market").onclick = (e) => {
-      const btn = e.target.closest("[data-color]");
-      if (!btn) return;
-      const color = btn.dataset.color;
-      document.getElementById("avatar-name").textContent = color;
-      if (window.setCubeColor) window.setCubeColor(color);
-    };
-
-    document.querySelectorAll("[data-view]").forEach(el => {
-      el.addEventListener("click", () => { const v = el.getAttribute("data-view"); if (v) showView(v); });
-    });
-
-    document.getElementById("play-btn").onclick = () => showView("game-view");
-    document.getElementById("leave-btn").onclick = () => showView("home");
-
-    document.getElementById("site-chat-form").onsubmit = (e) => {
-      e.preventDefault();
-      const input = document.getElementById("site-chat-input");
-      if (input.value.trim()) say(input.value.trim().slice(0, 180));
-      input.value = "";
-    };
-
-    document.getElementById("chat-form").onsubmit = (e) => {
-      e.preventDefault();
-      const input = document.getElementById("chat-input");
-      if (input.value.trim()) say(input.value.trim().slice(0, 180));
-      input.value = "";
-    };
-
-    const cRow = document.createElement("div");
-    cRow.className = "row";
-    cRow.style.padding = "16px";
-    cRow.textContent = "1. Паркур — единственная карта этого шага";
-    document.getElementById("charts-list").appendChild(cRow);
-
-    let cubeMaterial;
-    window.setCubeColor = (color) => { if(cubeMaterial) cubeMaterial.color.set(color); };
-
-    const Parkour = {
-      active: false,
-      scene: null, camera: null, renderer: null, cube: null,
-      keys: {}, pos: { x: 0, y: 1, z: 0 }, velY: 0, isGrounded: false,
-      platforms: [],
-      init() {
-        const cv = document.getElementById("game-canvas");
-        this.scene = new THREE.Scene();
-        this.scene.background = new THREE.Color(0x0a141e);
-        this.scene.fog = new THREE.FogExp2(0x0a141e, 0.015);
-
-        this.camera = new THREE.PerspectiveCamera(60, 1, 0.1, 1000);
-        this.renderer = new THREE.WebGLRenderer({ canvas: cv, antialias: true });
-
-        const ambient = new THREE.AmbientLight(0xffffff, 0.4);
-        this.scene.add(ambient);
-        const dir = new THREE.DirectionalLight(0xffffff, 0.8);
-        dir.position.set(10, 20, 15);
-        this.scene.add(dir);
-
-        cubeMaterial = new THREE.MeshStandardMaterial({ color: 0x4aa3ff, roughness: 0.4 });
-        this.cube = new THREE.Mesh(new THREE.BoxGeometry(1, 1, 1), cubeMaterial);
-        this.scene.add(this.cube);
-
-        this.gen();
-
-        window.addEventListener("keydown", (e) => { this.keys[e.code] = true; if(e.code === "Space" && this.isGrounded) { this.velY = 0.22; this.isGrounded = false; } });
-        window.addEventListener("keyup", (e) => this.keys[e.code] = false);
-
-        let progress = 0;
-        const iv = setInterval(() => {
-          progress += 25;
-          document.getElementById("bar-progress").style.width = progress + "%";
-          if (progress >= 100) { clearInterval(iv); document.getElementById("loader").classList.add("hide"); }
-        }, 200);
-
-        this.loop();
-      },
-      gen() {
-        let z = 0;
-        for (let i = 0; i < 40; i++) {
-          const w = 3 + Math.random() * 4;
-          const d = 3 + Math.random() * 4;
-          const geo = new THREE.BoxGeometry(w, 0.5, d);
-          const mat = new THREE.MeshStandardMaterial({ color: i === 0 ? 0x2e4a62 : 0x1f3447, roughness: 0.6 });
-          const mesh = new THREE.Mesh(geo, mat);
-          
-          let x = 0;
-          if(i > 0) { x = (Math.random() - 0.5) * 8; z -= 6 + Math.random() * 6; }
-          
-          mesh.position.set(x, 0, z);
-          this.scene.add(mesh);
-          this.platforms.push({ x, z, w, d });
+        if (isSignUp) {
+            // РЕГИСТРАЦИЯ ИГРОКА
+            auth.createUserWithEmailAndPassword(email, password)
+                .then((userCredential) => {
+                    const user = userCredential.user;
+                    
+                    // Создаем базовую карточку игрока в Realtime Database
+                    db.ref('users/' + user.uid).set({
+                        email: user.email,
+                        isBanned: false,
+                        role: "player"
+                    }).then(() => {
+                        alert("Вы успешно зарегистрировались! Теперь войдите в аккаунт.");
+                        location.reload(); 
+                    });
+                })
+                .catch((error) => {
+                    alert("Ошибка регистрации: " + error.message);
+                });
+        } else {
+            // ВХОД В ИГРУ И ПРОВЕРКА НА БАН
+            auth.signInWithEmailAndPassword(email, password)
+                .then((userCredential) => {
+                    const user = userCredential.user;
+                    
+                    // Читаем данные из базы данных
+                    db.ref('users/' + user.uid).once('value').then((snapshot) => {
+                        const userData = snapshot.val();
+                        
+                        if (snapshot.exists()) {
+                            // Проверка статуса блокировки
+                            if (userData.isBanned === true) {
+                                alert("Вход заблокирован! Вы забанены администратором.");
+                                auth.signOut();
+                                return;
+                            }
+                            
+                            // Проверка роли Администратора
+                            if (userData.role === "admin") {
+                                adminSection.style.display = "block";
+                                alert("Приветствуем в Панели Создателя!");
+                            } else {
+                                adminSection.style.display = "none";
+                                alert("Успешный вход! Игра запускается...");
+                                if (typeof runParkourGame === "function") runParkourGame();
+                            }
+                        } else {
+                            // Автоматическое создание карточки, если аккаунта нет в БД
+                            db.ref('users/' + user.uid).set({
+                                email: user.email,
+                                isBanned: false,
+                                role: "player"
+                            });
+                            alert("Профиль успешно создан. Добро пожаловать!");
+                        }
+                    });
+                })
+                .catch((error) => {
+                    alert("Ошибка авторизации: " + error.message);
+                });
         }
-      },
-      enter() {
-        this.active = true;
-        const cv = document.getElementById("game-canvas");
-        this.camera.aspect = cv.clientWidth / cv.clientHeight;
-        this.camera.updateProjectionMatrix();
-        this.renderer.setSize(cv.clientWidth, cv.clientHeight);
-      },
-      leave() { this.active = false; },
-      loop() {
-        requestAnimationFrame(() => this.loop());
-        if (!this.active) return;
+    });
 
-        let moveX = 0, moveZ = 0;
-        if (this.keys["KeyW"]) moveZ -= 1;
+    // =======================================================
+    // 4. ФУНКЦИИ УПРАВЛЕНИЯ ИГРОКАМИ ДЛЯ АДМИН-ПАНЕЛИ
+    // =======================================================
+    function getTargetUid() {
+        const uid = document.getElementById('target-uid').value.trim();
+        if(!uid) alert("Сначала введите UID игрока!");
+        return uid;
+    }
+
+    // Забанить игрока
+    function adminBanPlayer() {
+        const uid = getTargetUid();
+        if(!uid) return;
+        db.ref('users/' + uid).update({ isBanned: true })
+            .then(() => alert(`Игрок ${uid} ЗАБАНЕН!`))
+            .catch(err => alert("Ошибка: " + err.message));
+    }
+
+    // Разбанить игрока
+    function adminUnbanPlayer() {
+        const uid = getTargetUid();
+        if(!uid) return;
+        db.ref('users/' + uid).update({ isBanned: false })
+            .then(() => alert(`Игрок ${uid} РАЗБАНЕН!`))
+            .catch(err => alert("Ошибка: " + err.message));
+    }
+
+    // Удалить профиль из БД
+    function adminDeletePlayer() {
+        const uid = getTargetUid();
+        if(!uid) return;
+        if(confirm("Удалить профиль игрока из базы навсегда?")) {
+            db.ref('users/' + uid).remove()
+                .then(() => alert(`Данные игрока ${uid} удалены.`))
+                .catch(err => alert("Ошибка: " + err.message));
+        }
+    }
+
+    // Запуск игры
+    function runParkourGame() {
+        console.log("Игра запускается...");
+    }
+</script>
+</body>
+</html>
+<script>
+    // =======================================================
+    // 1. НАСТРОЙКА FIREBASE (Замени тестовые данные на свои)
+    // =======================================================
+    const firebaseConfig = {
+        apiKey: "ВСТАВЬ_СЮДА_СВОЙ_API_KEY",
+        authDomain: "://firebaseapp.com",
+        databaseURL: "https://firebaseio.com",
+        projectId: "parkour-studio",
+        storageBucket: "://appspot.com",
+        messagingSenderId: "1234567890",
+        appId: "1:123456:web:123456"
+    };
+
+    // Инициализация сервисов Firebase
+    if (!firebase.apps.length) {
+        firebase.initializeApp(firebaseConfig);
+    }
+    const auth = firebase.auth();
+    const db = firebase.database();
+
+    // Состояние формы (false = Логин, true = Регистрация)
+    let isSignUp = false;
+
+    // Получаем элементы интерфейса
+    const submitBtn = document.getElementById('submit-btn');
+    const modeText = document.getElementById('mode-text');
+    const emailInput = document.getElementById('user-email');
+    const passwordInput = document.getElementById('user-password');
+    const adminSection = document.getElementById('admin-section');
+
+    // =======================================================
+    // 2. БЕЗОПАСНОЕ ПЕРЕКЛЮЧЕНИЕ РЕЖИМА (SIGN UP / LOG IN)
+    // =======================================================
+    document.addEventListener('click', function(event) {
+        if (event.target && event.target.id === 'switch-mode-btn') {
+            isSignUp = !isSignUp;
+            
+            if (isSignUp) {
+                submitBtn.innerText = "Sign Up";
+                modeText.innerHTML = 'Already have an account? <span id="switch-mode-btn">Log in</span>';
+            } else {
+                submitBtn.innerText = "Log In";
+                modeText.innerHTML = 'Don\'t have an account? <span id="switch-mode-btn">Sign up</span>';
+            }
+        }
+    });
+
+    // =======================================================
+    // 3. ОТПРАВКА ФОРМЫ (РЕГИСТРАЦИЯ И ВХОД С ПРОВЕРКОЙ БАНА)
+    // =======================================================
+    submitBtn.addEventListener('click', () => {
+        const email = emailInput.value.trim();
+        const password = passwordInput.value;
+
+        if (!email || !password) {
+            alert("Пожалуйста, заполните почту и пароль!");
+            return;
+        }
+
+        if (isSignUp) {
+            // РЕГИСТРАЦИЯ ИГРОКА
+            auth.createUserWithEmailAndPassword(email, password)
+                .then((userCredential) => {
+                    const user = userCredential.user;
+                    
+                    // Создаем базовую карточку игрока в Realtime Database
+                    db.ref('users/' + user.uid).set({
+                        email: user.email,
+                        isBanned: false,
+                        role: "player"
+                    }).then(() => {
+                        alert("Вы успешно зарегистрировались! Теперь войдите в аккаунт.");
+                        location.reload(); 
+                    });
+                })
+                .catch((error) => {
+                    alert("Ошибка регистрации: " + error.message);
+                });
+        } else {
+            // ВХОД В ИГРУ И ПРОВЕРКА НА БАН
+            auth.signInWithEmailAndPassword(email, password)
+                .then((userCredential) => {
+                    const user = userCredential.user;
+                    
+                    // Читаем данные из базы данных
+                    db.ref('users/' + user.uid).once('value').then((snapshot) => {
+                        const userData = snapshot.val();
+                        
+                        if (snapshot.exists()) {
+                            // Проверка статуса блокировки
+                            if (userData.isBanned === true) {
+                                alert("Вход заблокирован! Вы забанены администратором.");
+                                auth.signOut();
+                                return;
+                            }
+                            
+                            // Проверка роли Администратора
+                            if (userData.role === "admin") {
+                                adminSection.style.display = "block";
+                                alert("Приветствуем в Панели Создателя!");
+                            } else {
+                                adminSection.style.display = "none";
+                                alert("Успешный вход! Игра запускается...");
+                                if (typeof runParkourGame === "function") runParkourGame();
+                            }
+                        } else {
+                            // Автоматическое создание карточки, если аккаунта нет в БД
+                            db.ref('users/' + user.uid).set({
+                                email: user.email,
+                                isBanned: false,
+                                role: "player"
+                            });
+                            alert("Профиль успешно создан. Добро пожаловать!");
+                        }
+                    });
+                })
+                .catch((error) => {
+                    alert("Ошибка авторизации: " + error.message);
+                });
+        }
+    });
+
+    // =======================================================
+    // 4. ФУНКЦИИ УПРАВЛЕНИЯ ИГРОКАМИ ДЛЯ АДМИН-ПАНЕЛИ
+    // =======================================================
+    function getTargetUid() {
+        const uid = document.getElementById('target-uid').value.trim();
+        if(!uid) alert("Сначала введите UID игрока!");
+        return uid;
+    }
+
+    // Забанить игрока
+    function adminBanPlayer() {
+        const uid = getTargetUid();
+        if(!uid) return;
+        db.ref('users/' + uid).update({ isBanned: true })
+            .then(() => alert(`Игрок ${uid} ЗАБАНЕН!`))
+            .catch(err => alert("Ошибка: " + err.message));
+    }
+
+    // Разбанить игрока
+    function adminUnbanPlayer() {
+        const uid = getTargetUid();
+        if(!uid) return;
+        db.ref('users/' + uid).update({ isBanned: false })
+            .then(() => alert(`Игрок ${uid} РАЗБАНЕН!`))
+            .catch(err => alert("Ошибка: " + err.message));
+    }
+
+    // Удалить профиль из БД
+    function adminDeletePlayer() {
+        const uid = getTargetUid();
+        if(!uid) return;
+        if(confirm("Удалить профиль игрока из базы навсегда?")) {
+            db.ref('users/' + uid).remove()
+                .then(() => alert(`Данные игрока ${uid} удалены.`))
+                .catch(err => alert("Ошибка: " + err.message));
+        }
+    }
+
+    // Запуск игры
+    function runParkourGame() {
+        console.log("Игра запускается...");
+    }
+</script>
+</body>
+</html>
