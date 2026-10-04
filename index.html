@@ -55,6 +55,8 @@
     .loader.hide { display: none; }
     .bar { height: 10px; background: #203044; border-radius: 999px; overflow: hidden; margin-top: 14px; }
     .bar > div { height: 100%; width: 0; background: linear-gradient(90deg,#00a2ff,#7ad0ff); transition: width .2s linear; }
+    
+    /* Окно авторизации */
     .studio-auth { position: fixed; inset: 0; z-index: 40; display: grid; place-items: center; background: radial-gradient(circle at 50% 20%, #1c3f66 0%, transparent 42%), #15181d; }
     .studio-auth.hide { display: none; }
     .studio-window { width: min(560px, calc(100% - 28px)); background: #2a2d31; border: 1px solid #3a3e44; border-radius: 10px; overflow: hidden; box-shadow: 0 24px 70px rgba(0,0,0,.45); }
@@ -93,11 +95,11 @@
     </aside>
     <main>
       <section id="home" class="view active">
-        <div class="topbar"><h1>Home</h1><div class="muted">Одиночная игра</div></div>
+        <div class="topbar"><h1>Home</h1><div class="muted">Режим: Онлайн</div></div>
         <div class="cards">
           <article class="card">
             <h3>Паркур</h3>
-            <p>Небо и парящие плиты. Сейчас без мультиплеера: человечек только твой.</p>
+            <p>Небо и парящие плиты. Сейчас подключено к облачной базе аккаунтов.</p>
             <button class="play" id="play-btn">Играть</button>
           </article>
           <article class="card">
@@ -113,214 +115,28 @@
       </section>
       <section id="chat" class="view">
         <div class="topbar"><h1>Chat</h1></div>
-        <div class="list" id="site-chat"></div>
-        <form id="site-chat-form" class="list">
-          <input id="site-chat-input" maxlength="180" placeholder="Локальное сообщение" />
-          <button class="primary" type="submit">Отправить</button>
-        </form>
+        <div class="list" id="site-chat-log"></div>
+        <form id="site-chat-form"><input type="text" id="site-chat-input" placeholder="Локальное сообщение"><button class="primary" type="submit">Отправить</button></form>
       </section>
       <section id="avatar" class="view">
         <div class="topbar"><h1>Avatar</h1></div>
-        <div class="cards"><article class="card"><h3 id="avatar-name">Player</h3><p>Цвет тела: <b id="avatar-color">#4aa3ff</b></p></article></div>
+        <div class="cards"><article class="card"><h3>Ваш персонаж</h3><p>Цвет тела: <b id="avatar-name">#4aa3ff</b></p></article></div>
+        <div class="tile-grid" id="more-grid"></div>
+      </section>
+      <section id="marketplace" class="view">
+        <div class="topbar"><h1>Marketplace</h1></div>
+        <div class="market-grid" id="market"></div>
       </section>
       <section id="more" class="view">
         <div class="topbar"><h1>More</h1></div>
-        <div class="tile-grid" id="more-grid"></div>
         <div class="switch-wrap"><button class="switch-btn" id="switch-accounts">Switch Accounts</button></div>
       </section>
-      <section id="marketplace" class="view">
-        <div class="topbar"><h1>Marketplace</h1><button class="ghost" data-view="more">Назад</button></div>
-        <p class="muted" style="padding:0 24px;">Только бесплатные цвета. Покупок нет.</p>
-        <div class="market-grid" id="market"></div>
-      </section>
-      <section id="subpage" class="view">
-        <div class="topbar"><h1 id="sub-title">Page</h1><button class="ghost" data-view="more">Назад</button></div>
-        <div class="list"><div class="row" id="sub-body"></div></div>
-      </section>
       <section id="game-view" class="view">
-        <canvas id="game-canvas"></canvas>
-        <div class="loader" id="loader"><div><h2>Паркур</h2><p class="muted" id="loader-text">Сборка плит...</p><div class="bar"><div id="loader-bar"></div></div></div></div>
-        <div class="hud-chat"><div id="chat-log"></div><form id="chat-form"><input id="chat-input" maxlength="180" placeholder="Чат..." /></form></div>
-        <div class="online-badge">Режим: один игрок</div>
+        <div class="online-badge" id="online-badge">Режим: один игрок</div>
+        <div class="hud-chat">
+          <div id="chat-log"></div>
+          <form id="chat-form"><input type="text" id="chat-input" placeholder="Нажмите Enter для чата..." autocomplete="off"></form>
+        </div>
         <div class="hud-help">WASD — ход, Space — прыжок, мышь — обзор</div>
         <button class="ghost back-btn" id="leave-btn">Выйти в меню</button>
-      </section>
-    </main>
-  </div>
-
-  <div class="studio-auth" id="studio-auth">
-    <div class="studio-window">
-      <div class="studio-titlebar"><span class="dots"><i></i><i></i><i></i></span><span>Parkour Studio</span></div>
-      <div class="studio-hero"><div class="studio-logo">PARKOUR <span>Studio</span></div><p>Start creating your own games!</p></div>
-      <form class="studio-form" id="auth-form">
-        <input id="username" maxlength="16" placeholder="Username" required />
-        <input id="password" type="password" minlength="4" maxlength="32" placeholder="Password" required />
-        <input id="password2" type="password" minlength="4" maxlength="32" placeholder="Confirm Password" hidden />
-        <p class="auth-error" id="auth-error"></p>
-        <button class="login-btn" id="auth-submit" type="submit">Log In</button>
-        <button class="linkish" id="forgot-btn" type="button">Forgot Password?</button>
-        <p class="member-line"><span id="member-text">Don't have an account?</span> <button class="linkish" id="toggle-auth" type="button">Sign up</button></p>
-        <p class="privacy">Пароль не сохраняется. Это одиночная страница, не настоящий аккаунт.</p>
-      </form>
-    </div>
-  </div>
-
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-  <script>
-    const TILES = [["marketplace","🛒","Marketplace"],["plus","✦","Plus"],["profile","☺","Profile"],["friends","👥","Friends"],["communities","⚑","Communities"],["inventory","🎒","Inventory"],["messages","✉","Messages"],["create","🛠","Create"],["newsroom","📰","Newsroom"],["learn","📘","Learn"],["gifts","🎁","Buy Gift Cards"],["store","🏬","Official Store"],["settings","⚙","Settings"],["about","ℹ","About"],["help","🛡","Help & Safety"],["quick","🔑","Quick Sign-in"]];
-    const ITEMS = [["Sky Blue","#4aa3ff"],["Mint","#3dcc9a"],["Sun","#f0c14b"],["Coral","#ff6b6b"],["Violet","#8b7cff"],["Cloud","#e8eef7"]];
-    const state = { name: "", color: "#4aa3ff" };
-    let signup = false;
-
-    function showView(id) {
-      document.querySelectorAll(".view").forEach((v) => v.classList.remove("active"));
-      document.getElementById(id).classList.add("active");
-      document.querySelectorAll(".nav-btn").forEach((b) => b.classList.toggle("active", b.dataset.view === id));
-      if (id === "game-view") Parkour.enter(); else Parkour.leave();
-    }
-    function say(text) {
-      const row = document.createElement("div");
-      row.className = "row";
-      row.textContent = state.name + ": " + text;
-      document.getElementById("site-chat").prepend(row);
-      const line = document.createElement("div");
-      line.textContent = state.name + ": " + text;
-      document.getElementById("chat-log").appendChild(line);
-    }
-    TILES.forEach(([key, icon, label]) => {
-      const btn = document.createElement("button");
-      btn.className = "tile";
-      btn.innerHTML = `<span class="big">${icon}</span>${label}`;
-      btn.onclick = () => {
-        if (key === "marketplace") return showView("marketplace");
-        document.getElementById("sub-title").textContent = label;
-        document.getElementById("sub-body").textContent = "Раздел-заготовка. Игра и каталог уже работают.";
-        showView("subpage");
-      };
-      document.getElementById("more-grid").appendChild(btn);
-    });
-    ITEMS.forEach(([name, color]) => {
-      const card = document.createElement("article");
-      card.className = "item";
-      card.innerHTML = `<div class="swatch" style="background:${color}"></div><div class="meta"><strong>${name}</strong><br><span class="free">FREE</span><p><button class="primary" data-color="${color}">Надеть</button></p></div>`;
-      document.getElementById("market").appendChild(card);
-    });
-    document.getElementById("market").onclick = (e) => {
-      const btn = e.target.closest("[data-color]");
-      if (!btn) return;
-      state.color = btn.dataset.color;
-      document.getElementById("avatar-color").textContent = state.color;
-      Parkour.setColor(state.color);
-    };
-    document.querySelectorAll("[data-view]").forEach((el) => el.addEventListener("click", () => showView(el.dataset.view)));
-    document.getElementById("play-btn").onclick = () => showView("game-view");
-    document.getElementById("leave-btn").onclick = () => showView("home");
-    document.getElementById("switch-accounts").onclick = () => document.getElementById("studio-auth").classList.remove("hide");
-    document.getElementById("site-chat-form").onsubmit = document.getElementById("chat-form").onsubmit = (e) => {
-      e.preventDefault();
-      const input = e.target.querySelector("input");
-      if (input.value.trim()) say(input.value.trim().slice(0, 180));
-      input.value = "";
-    };
-    document.getElementById("toggle-auth").onclick = () => {
-      signup = !signup;
-      document.getElementById("password2").hidden = !signup;
-      document.getElementById("auth-submit").textContent = signup ? "Sign up" : "Log In";
-      document.getElementById("member-text").textContent = signup ? "Already have an account?" : "Don't have an account?";
-      document.getElementById("toggle-auth").textContent = signup ? "Log in" : "Sign up";
-    };
-    document.getElementById("forgot-btn").onclick = () => {
-      document.getElementById("auth-error").textContent = "Пароль не хранится. Введи имя и новый пароль.";
-    };
-    document.getElementById("auth-form").onsubmit = (e) => {
-      e.preventDefault();
-      const name = document.getElementById("username").value.trim().slice(0, 16);
-      const pass = document.getElementById("password").value;
-      const pass2 = document.getElementById("password2").value;
-      if (name.length < 2 || pass.length < 4 || (signup && pass !== pass2)) {
-        document.getElementById("auth-error").textContent = signup ? "Проверь имя и совпадение паролей." : "Имя от 2 символов, пароль от 4.";
-        return;
-      }
-      state.name = name;
-      document.getElementById("avatar-name").textContent = name;
-      document.getElementById("password").value = "";
-      document.getElementById("password2").value = "";
-      document.getElementById("studio-auth").classList.add("hide");
-      showView("home");
-    };
-
-    const Parkour = (() => {
-      const canvas = document.getElementById("game-canvas");
-      const scene = new THREE.Scene();
-      scene.background = new THREE.Color("#7ec8ff");
-      scene.fog = new THREE.Fog("#7ec8ff", 40, 120);
-      const camera = new THREE.PerspectiveCamera(70, 1, 0.1, 200);
-      const renderer = new THREE.WebGLRenderer({ canvas: canvas, antialias: true });
-      scene.add(new THREE.AmbientLight(0xffffff, 0.75));
-      const sun = new THREE.DirectionalLight(0xffffff, 0.8);
-      sun.position.set(20, 40, 10);
-      scene.add(sun);
-      const spots = [[0,0,0,8,8],[7,1.2,-6,4,4],[12,2.4,-12,4,4],[8,3.6,-18,5,3],[2,4.8,-22,4,4],[-5,6,-18,4,4],[-10,7.2,-12,5,4],[-8,8.6,-4,4,4],[-2,10,2,6,6]];
-      const boxes = [];
-      spots.forEach((p, i) => {
-        const mesh = new THREE.Mesh(new THREE.BoxGeometry(p[3], 0.6, p[4]), new THREE.MeshLambertMaterial({ color: i === spots.length - 1 ? 0x3dcc7a : 0xf4f7fb }));
-        mesh.position.set(p[0], p[1], p[2]);
-        scene.add(mesh);
-        boxes.push(new THREE.Box3().setFromObject(mesh));
-      });
-      const mat = new THREE.MeshLambertMaterial({ color: state.color });
-      const me = new THREE.Group();
-      [[0.7,0.9,0.4,0,1.15],[0.46,0.46,0.46,0,1.85],[0.22,0.7,0.22,-0.16,0.35],[0.22,0.7,0.22,0.16,0.35]].forEach((s) => {
-        const part = new THREE.Mesh(new THREE.BoxGeometry(s[0], s[1], s[2]), mat);
-        part.position.set(s[3], s[4], 0);
-        me.add(part);
-      });
-      scene.add(me);
-      const body = { x: 0, y: 2.2, z: 2.2, vy: 0, grounded: false };
-      const keys = {};
-      let playing = false, yaw = 0, last = performance.now();
-      addEventListener("keydown", (e) => { keys[e.code] = true; if (e.code === "Space") e.preventDefault(); });
-      addEventListener("keyup", (e) => { keys[e.code] = false; });
-      canvas.addEventListener("click", () => { if (playing) canvas.requestPointerLock(); });
-      addEventListener("mousemove", (e) => { if (document.pointerLockElement === canvas) yaw -= e.movementX * 0.002; });
-      function resize() {
-        const w = canvas.clientWidth || 800, h = canvas.clientHeight || 600;
-        camera.aspect = w / h; camera.updateProjectionMatrix(); renderer.setSize(w, h, false);
-      }
-      addEventListener("resize", resize);
-      function ground(x, y, z) {
-        for (const box of boxes) {
-          if (x < box.min.x + 0.2 || x > box.max.x - 0.2 || z < box.min.z + 0.2 || z > box.max.z - 0.2) continue;
-          if (y >= box.max.y - 0.08 && y <= box.max.y + 0.35 && body.vy <= 0) return box.max.y;
-        }
-        return null;
-      }
-      function frame(now) {
-        requestAnimationFrame(frame);
-        const dt = Math.min(0.033, (now - last) / 1000); last = now;
-        if (!playing) return;
-        let ix = 0, iz = 0;
-        if (keys.KeyW) iz -= 1; if (keys.KeyS) iz += 1; if (keys.KeyA) ix -= 1; if (keys.KeyD) ix += 1;
-        const len = Math.hypot(ix, iz) || 1;
-        body.x += ((ix / len) * Math.cos(yaw) + (iz / len) * Math.sin(yaw)) * 7 * dt;
-        body.z += ((iz / len) * Math.cos(yaw) - (ix / len) * Math.sin(yaw)) * 7 * dt;
-        if (keys.Space && body.grounded) { body.vy = 7.2; body.grounded = false; }
-        body.vy -= 18 * dt; body.y += body.vy * dt;
-        const g = ground(body.x, body.y, body.z);
-        if (g !== null) { body.y = g; body.vy = 0; body.grounded = true; } else body.grounded = false;
-        if (body.y < -20) { body.x = 0; body.y = 3; body.z = 2.2; body.vy = 0; }
-        me.position.set(body.x, body.y, body.z); me.rotation.y = yaw;
-        camera.position.set(body.x + Math.sin(yaw) * 6, body.y + 3.2, body.z + Math.cos(yaw) * 6);
-        camera.lookAt(body.x, body.y + 1.2, body.z);
-        renderer.render(scene, camera);
-      }
-      requestAnimationFrame(frame);
-      return {
-        enter() { playing = true; resize(); let p = 0; const loader = document.getElementById("loader"); loader.classList.remove("hide"); const t = setInterval(() => { p += 12; document.getElementById("loader-bar").style.width = p + "%"; if (p >= 100) { clearInterval(t); loader.classList.add("hide"); } }, 70); },
-        leave() { playing = false; if (document.pointerLockElement === canvas) document.exitPointerLock(); },
-        setColor(c) { mat.color.set(c); }
-      };
-    })();
-  </script>
-</body>
-</html>
+        <div class="loader" id="loader"><div style="text-align:center;"><h2>Сборка плит...</h2><div class="bar"><div id="bar-progress"></div></div></div></div>
