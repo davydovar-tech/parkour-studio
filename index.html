@@ -56,7 +56,6 @@
     .bar { height: 10px; background: #203044; border-radius: 999px; overflow: hidden; margin-top: 14px; }
     .bar > div { height: 100%; width: 0; background: linear-gradient(90deg,#00a2ff,#7ad0ff); transition: width .2s linear; }
     
-    /* Окно авторизации */
     .studio-auth { position: fixed; inset: 0; z-index: 40; display: grid; place-items: center; background: radial-gradient(circle at 50% 20%, #1c3f66 0%, transparent 42%), #15181d; }
     .studio-auth.hide { display: none; }
     .studio-window { width: min(560px, calc(100% - 28px)); background: #2a2d31; border: 1px solid #3a3e44; border-radius: 10px; overflow: hidden; box-shadow: 0 24px 70px rgba(0,0,0,.45); }
@@ -69,7 +68,7 @@
     .studio-logo span { font-weight: 500; }
     .studio-hero p { margin: 8px 0 0; color: #d5dde6; }
     .studio-form { padding: 28px 54px 22px; display: flex; flex-direction: column; align-items: center; }
-    .studio-form input { width: 100%; max-width: 360px; height: 36px; margin: 7px 0; padding: 0 10px; border-radius: 3px; border: 1px solid #8d9298; background: #f4f4f4; color: #1b1e22; }
+    .studio-form input { width: 100%; max-width: 360px; height: 36px; margin: 7px 0; padding: 0 10px; border-radius: 3px; border: 1px solid #3a3e44; background: #1f2226; color: #fff; }
     .login-btn { width: 100%; max-width: 360px; height: 38px; margin-top: 12px; border: 0; border-radius: 3px; background: #00a2ff; color: white; font-size: 16px; font-weight: 700; cursor: pointer; }
     .linkish { border: 0; background: transparent; color: #49b6ff; cursor: pointer; padding: 0; font-size: 14px; }
     .member-line { color: #d7dbe0; font-size: 14px; margin: 16px 0 8px; }
@@ -82,6 +81,7 @@
       .studio-logo { font-size: 26px; }
     }
   </style>
+  <script src="https://cloudflare.com"></script>
 </head>
 <body>
   <div class="app">
@@ -95,7 +95,7 @@
     </aside>
     <main>
       <section id="home" class="view active">
-        <div class="topbar"><h1>Home</h1><div class="muted">Режим: Онлайн</div></div>
+        <div class="topbar"><h1>Home</h1><div class="muted" id="online-status-text">Режим: Онлайн</div></div>
         <div class="cards">
           <article class="card">
             <h3>Паркур</h3>
@@ -109,28 +109,34 @@
           </article>
         </div>
       </section>
+      
       <section id="charts" class="view">
         <div class="topbar"><h1>Charts</h1></div>
-        <div class="list"><div class="row">1. Паркур — единственная карта этого шага</div></div>
+        <div class="list" id="charts-list"></div>
       </section>
+
       <section id="chat" class="view">
         <div class="topbar"><h1>Chat</h1></div>
-        <div class="list" id="site-chat-log"></div>
-        <form id="site-chat-form"><input type="text" id="site-chat-input" placeholder="Локальное сообщение"><button class="primary" type="submit">Отправить</button></form>
+        <div class="list" id="site-chat-log" style="padding: 24px; min-height: 200px;"></div>
+        <form id="site-chat-form" style="padding: 0 24px;"><input type="text" id="site-chat-input" placeholder="Локальное сообщение"><button class="primary" type="submit">Отправить</button></form>
       </section>
+
       <section id="avatar" class="view">
         <div class="topbar"><h1>Avatar</h1></div>
         <div class="cards"><article class="card"><h3>Ваш персонаж</h3><p>Цвет тела: <b id="avatar-name">#4aa3ff</b></p></article></div>
         <div class="tile-grid" id="more-grid"></div>
       </section>
+
       <section id="marketplace" class="view">
         <div class="topbar"><h1>Marketplace</h1></div>
         <div class="market-grid" id="market"></div>
       </section>
+
       <section id="more" class="view">
         <div class="topbar"><h1>More</h1></div>
         <div class="switch-wrap"><button class="switch-btn" id="switch-accounts">Switch Accounts</button></div>
       </section>
+
       <section id="game-view" class="view">
         <div class="online-badge" id="online-badge">Режим: один игрок</div>
         <div class="hud-chat">
@@ -140,3 +146,263 @@
         <div class="hud-help">WASD — ход, Space — прыжок, мышь — обзор</div>
         <button class="ghost back-btn" id="leave-btn">Выйти в меню</button>
         <div class="loader" id="loader"><div style="text-align:center;"><h2>Сборка плит...</h2><div class="bar"><div id="bar-progress"></div></div></div></div>
+        <canvas id="game-canvas"></canvas>
+      </section>
+    </main>
+  </div>
+
+  <div class="studio-auth" id="studio-auth">
+    <div class="studio-window">
+      <div class="studio-titlebar"><div class="dots"><i></i><i></i><i></i></div>Parkour Studio Launcher</div>
+      <div class="studio-hero"><div class="studio-logo">PARKOUR <span>Studio</span></div><p>Start creating your own games!</p></div>
+      <form class="studio-form" id="auth-form">
+        <input type="text" id="username" placeholder="Username" required minlength="2" maxlength="16" />
+        <input type="password" id="password" placeholder="Password" required minlength="4" />
+        <input type="password" id="password-confirm" placeholder="Confirm Password" style="display:none;" />
+        <p class="auth-error" id="auth-error"></p>
+        <button type="submit" class="login-btn" id="auth-submit">Log In</button>
+        <p class="member-line"><span id="member-text">Don't have an account?</span> <button type="button" class="linkish" id="toggle-auth">Sign up</button></p>
+        <p class="privacy">Данные надежно сохраняются в базу данных Firebase.</p>
+      </form>
+    </div>
+  </div>
+  <script type="module">
+    import { initializeApp } from "https://gstatic.com";
+    import { getFirestore, doc, getDoc, setDoc } from "https://gstatic.com";
+
+    const firebaseConfig = {
+        apiKey: "AIzaSyDzxC_wCFyX8z1t0Dk89clgpU1bS2IGYus",
+        authDomain: "://firebaseapp.com",
+        projectId: "parkour-studio",
+        storageBucket: "://appspot.com",
+        messagingSenderId: "783686073046",
+        appId: "1:783686073046:web:708bba438773a04895e777",
+        measurementId: "G-2Q8GCR02D4"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+
+    window.state = { name: "", color: "#4aa3ff" };
+    let signup = false;
+
+    const toggleBtn = document.getElementById("toggle-auth");
+    const confirmInput = document.getElementById("password-confirm");
+    const submitBtn = document.getElementById("auth-submit");
+    const memberText = document.getElementById("member-text");
+    const errText = document.getElementById("auth-error");
+
+    toggleBtn.onclick = () => {
+      signup = !signup;
+      confirmInput.style.display = signup ? "block" : "none";
+      submitBtn.textContent = signup ? "Sign Up" : "Log In";
+      memberText.textContent = signup ? "Already have an account?" : "Don't have an account?";
+      toggleBtn.textContent = signup ? "Log in" : "Sign up";
+      errText.textContent = "";
+    };
+
+    document.getElementById("auth-form").onsubmit = async (e) => {
+      e.preventDefault();
+      errText.textContent = "";
+      const userVal = document.getElementById("username").value.trim();
+      const passVal = document.getElementById("password").value;
+      const confVal = confirmInput.value;
+
+      if (userVal.length < 2) { errText.textContent = "Имя слишком короткое!"; return; }
+
+      const userRef = doc(db, "users", userVal.toLowerCase());
+
+      try {
+        const snap = await getDoc(userRef);
+
+        if (signup) {
+          if (snap.exists()) { errText.textContent = "Имя уже занято!"; return; }
+          if (passVal !== confVal) { errText.textContent = "Пароли не совпадают!"; return; }
+
+          await setDoc(userRef, {
+            username: userVal,
+            password: passVal,
+            avatarColor: "#4aa3ff",
+            status: "active"
+          });
+          loginSuccess(userVal, "#4aa3ff");
+        } else {
+          if (!snap.exists()) { errText.textContent = "Игрок не найден!"; return; }
+          const data = snap.data();
+
+          if (data.status === "banned") {
+            errText.textContent = "🔴 Ваш аккаунт ЗАБАНЕН создателем игры!";
+            return;
+          }
+
+          if (data.password !== passVal) { errText.textContent = "Неверный пароль!"; return; }
+          loginSuccess(data.username, data.avatarColor || "#4aa3ff");
+        }
+      } catch (err) {
+        errText.textContent = "Ошибка подключения к базе данных.";
+      }
+    };
+
+    function loginSuccess(name, color) {
+      window.state.name = name;
+      window.state.color = color;
+      document.getElementById("studio-auth").classList.add("hide");
+      document.getElementById("online-badge").textContent = `Игрок: ${name}`;
+      document.getElementById("online-status-text").textContent = `Режим: Онлайн (${name}) 🟢`;
+      document.getElementById("avatar-name").textContent = color;
+      if (window.setCubeColor) window.setCubeColor(color);
+    }
+
+    document.getElementById("switch-accounts").onclick = () => {
+      document.getElementById("studio-auth").classList.remove("hide");
+    };
+  </script>
+
+  <script>
+    const TILES = [["marketplace","👕","Marketplace"],["store","🛍️","Official Store"],["settings","⚙️","Settings"],["about","ℹ️","About"],["help","⛑️","Help & Safety"],["quick","⚡","Quick Sign-In"]];
+    const ITEMS = [["Sky Blue","#87ceeb"],["Default Blue","#4aa3ff"],["Mint","#3dcc9a"],["Sun","#ffeb3f"],["Violet","#8b57ff"],["Cloud","#e6eef7"]];
+    
+    function showView(id) {
+      document.querySelectorAll(".view").forEach(v => v.classList.remove("active"));
+      document.querySelectorAll(".nav-btn").forEach(b => b.classList.remove("active"));
+      const view = document.getElementById(id);
+      if (view) view.classList.add("active");
+      const btn = document.querySelector(`[data-view="${id}"]`);
+      if (btn) btn.classList.add("active");
+      if (id === "game-view") Parkour.enter(); else Parkour.leave();
+    }
+
+    function say(text) {
+      const pName = (window.state && window.state.name) ? window.state.name : "Игрок";
+      const row = document.createElement("div");
+      row.className = "row";
+      row.style.marginBottom = "6px";
+      row.textContent = pName + ": " + text;
+      document.getElementById("site-chat-log").prepend(row);
+      const line = document.createElement("div");
+      line.textContent = pName + ": " + text;
+      document.getElementById("chat-log").appendChild(line);
+    }
+
+    TILES.forEach(([key, icon, label]) => {
+      const btn = document.createElement("button");
+      btn.className = "tile";
+      btn.innerHTML = `<span class="big">${icon}</span>${label}`;
+      btn.onclick = () => { if (key === "marketplace") showView("marketplace"); };
+      document.getElementById("more-grid").appendChild(btn);
+    });
+
+    ITEMS.forEach(([name, color]) => {
+      const card = document.createElement("article");
+      card.className = "item";
+      card.innerHTML = `<div class="swatch" style="background:${color}"></div><div class="meta"><h3>${name}</h3><span class="free">Free</span><p><button class="primary" data-color="${color}">Надеть</button></p></div>`;
+      document.getElementById("market").appendChild(card);
+    });
+
+    document.getElementById("market").onclick = (e) => {
+      const btn = e.target.closest("[data-color]");
+      if (!btn) return;
+      const color = btn.dataset.color;
+      document.getElementById("avatar-name").textContent = color;
+      if (window.setCubeColor) window.setCubeColor(color);
+    };
+
+    document.querySelectorAll("[data-view]").forEach(el => {
+      el.addEventListener("click", () => { const v = el.getAttribute("data-view"); if (v) showView(v); });
+    });
+
+    document.getElementById("play-btn").onclick = () => showView("game-view");
+    document.getElementById("leave-btn").onclick = () => showView("home");
+
+    document.getElementById("site-chat-form").onsubmit = (e) => {
+      e.preventDefault();
+      const input = document.getElementById("site-chat-input");
+      if (input.value.trim()) say(input.value.trim().slice(0, 180));
+      input.value = "";
+    };
+
+    document.getElementById("chat-form").onsubmit = (e) => {
+      e.preventDefault();
+      const input = document.getElementById("chat-input");
+      if (input.value.trim()) say(input.value.trim().slice(0, 180));
+      input.value = "";
+    };
+
+    const cRow = document.createElement("div");
+    cRow.className = "row";
+    cRow.style.padding = "16px";
+    cRow.textContent = "1. Паркур — единственная карта этого шага";
+    document.getElementById("charts-list").appendChild(cRow);
+
+    let cubeMaterial;
+    window.setCubeColor = (color) => { if(cubeMaterial) cubeMaterial.color.set(color); };
+
+    const Parkour = {
+      active: false,
+      scene: null, camera: null, renderer: null, cube: null,
+      keys: {}, pos: { x: 0, y: 1, z: 0 }, velY: 0, isGrounded: false,
+      platforms: [],
+      init() {
+        const cv = document.getElementById("game-canvas");
+        this.scene = new THREE.Scene();
+        this.scene.background = new THREE.Color(0x0a141e);
+        this.scene.fog = new THREE.FogExp2(0x0a141e, 0.015);
+
+        this.camera = new THREE.PerspectiveCamera(60, 1, 0.1, 1000);
+        this.renderer = new THREE.WebGLRenderer({ canvas: cv, antialias: true });
+
+        const ambient = new THREE.AmbientLight(0xffffff, 0.4);
+        this.scene.add(ambient);
+        const dir = new THREE.DirectionalLight(0xffffff, 0.8);
+        dir.position.set(10, 20, 15);
+        this.scene.add(dir);
+
+        cubeMaterial = new THREE.MeshStandardMaterial({ color: 0x4aa3ff, roughness: 0.4 });
+        this.cube = new THREE.Mesh(new THREE.BoxGeometry(1, 1, 1), cubeMaterial);
+        this.scene.add(this.cube);
+
+        this.gen();
+
+        window.addEventListener("keydown", (e) => { this.keys[e.code] = true; if(e.code === "Space" && this.isGrounded) { this.velY = 0.22; this.isGrounded = false; } });
+        window.addEventListener("keyup", (e) => this.keys[e.code] = false);
+
+        let progress = 0;
+        const iv = setInterval(() => {
+          progress += 25;
+          document.getElementById("bar-progress").style.width = progress + "%";
+          if (progress >= 100) { clearInterval(iv); document.getElementById("loader").classList.add("hide"); }
+        }, 200);
+
+        this.loop();
+      },
+      gen() {
+        let z = 0;
+        for (let i = 0; i < 40; i++) {
+          const w = 3 + Math.random() * 4;
+          const d = 3 + Math.random() * 4;
+          const geo = new THREE.BoxGeometry(w, 0.5, d);
+          const mat = new THREE.MeshStandardMaterial({ color: i === 0 ? 0x2e4a62 : 0x1f3447, roughness: 0.6 });
+          const mesh = new THREE.Mesh(geo, mat);
+          
+          let x = 0;
+          if(i > 0) { x = (Math.random() - 0.5) * 8; z -= 6 + Math.random() * 6; }
+          
+          mesh.position.set(x, 0, z);
+          this.scene.add(mesh);
+          this.platforms.push({ x, z, w, d });
+        }
+      },
+      enter() {
+        this.active = true;
+        const cv = document.getElementById("game-canvas");
+        this.camera.aspect = cv.clientWidth / cv.clientHeight;
+        this.camera.updateProjectionMatrix();
+        this.renderer.setSize(cv.clientWidth, cv.clientHeight);
+      },
+      leave() { this.active = false; },
+      loop() {
+        requestAnimationFrame(() => this.loop());
+        if (!this.active) return;
+
+        let moveX = 0, moveZ = 0;
+        if (this.keys["KeyW"]) moveZ -= 1;
